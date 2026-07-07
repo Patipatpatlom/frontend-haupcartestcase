@@ -6,7 +6,7 @@ function App() {
   useEffect(() => {
     fetch('http://localhost:3000/cars')
       .then(response => response.json())
-      .then(data => setCars(data))
+      .then(data => setCars(data.data || []))
       .catch(error => console.error(error));
   }, []);
 
