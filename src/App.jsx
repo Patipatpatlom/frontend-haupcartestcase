@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import './App.css';
 
-function App() {
+function CarList() {
   const [cars, setCars] = useState([]);
   const [formData, setFormData] = useState({ brand: '', model: '' });
 
@@ -60,14 +61,61 @@ function App() {
       <div className="card">
         <h1>Cars List</h1>
         <ul className="car-list">
-          {cars.map((car, index) => (
-            <li key={index} className="car-item">
-              {JSON.stringify(car)}
-            </li>
-          ))}
+          {cars.map((car, index) => {
+            const carId = car.id || car._id || index;
+            return (
+              <li key={carId} className="car-item">
+                <Link to={`/car/${carId}`}>
+                  {JSON.stringify(car)}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
+  );
+}
+
+function CarDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [car, setCar] = useState(null);
+
+  useEffect(() => {
+    fetch(`http://localhost:3000/cars/${id}`)
+      .then(response => response.json())
+      .then(data => setCar(data.data || data))
+      .catch(error => console.error(error));
+  }, [id]);
+
+  return (
+    <div className="container">
+      <div className="card">
+        <button onClick={() => navigate(-1)} className="btn-submit" style={{ marginBottom: '20px' }}>
+          Back
+        </button>
+        <h1>Car Detail</h1>
+        {car ? (
+          <div>
+            <pre>{JSON.stringify(car, null, 2)}</pre>
+          </div>
+        ) : (
+          <p>Loading...</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<CarList />} />
+        <Route path="/car/:id" element={<CarDetail />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
