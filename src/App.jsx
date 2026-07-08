@@ -124,10 +124,16 @@ function CarDetail() {
   const navigate = useNavigate();
   const [car, setCar] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editFormData, setEditFormData] = useState({ brand: '', model: '' });
+  const [editFormData, setEditFormData] = useState({ brand: '', carModel: '', licenseplate: '', remarks: '' });
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [detailError, setDetailError] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+
+  const getDefaultImg = (carData) => {
+    const q = encodeURIComponent(`${carData.brand || 'car'} ${carData.carModel || ''}`);
+    return `https://loremflickr.com/800/400/${q},car,automobile?lock=${id}`;
+  };
 
   const fetchCar = () => {
     setDetailError(null);
@@ -139,7 +145,15 @@ function CarDetail() {
       .then(data => {
         const carData = data.data || data;
         setCar(carData);
-        setEditFormData({ brand: carData.brand || '', model: carData.model || '' });
+        setEditFormData({
+          brand: carData.brand || '',
+          carModel: carData.carModel || '',
+          licenseplate: carData.licenseplate || '',
+          remarks: carData.remarks || '',
+          imageUrl: localStorage.getItem(`car_img_${id}`) || ''
+        });
+        const savedImg = localStorage.getItem(`car_img_${id}`);
+        setImageUrl(savedImg || getDefaultImg(carData));
       })
       .catch(error => setDetailError(error.message));
   };
@@ -154,6 +168,7 @@ function CarDetail() {
       fetch(`http://localhost:3000/cars/${id}`, { method: 'DELETE' })
         .then(response => {
           if (response.ok) {
+            localStorage.removeItem(`car_img_${id}`);
             alert('ลบสำเร็จ');
             navigate('/');
           } else {
@@ -168,13 +183,20 @@ function CarDetail() {
   const handleEditSubmit = (e) => {
     e.preventDefault();
     setIsSaving(true);
+    const { imageUrl: imgVal, ...bodyData } = editFormData;
     fetch(`http://localhost:3000/cars/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editFormData)
+      body: JSON.stringify(bodyData)
     })
     .then(response => {
       if (response.ok) {
+        if (imgVal) {
+          localStorage.setItem(`car_img_${id}`, imgVal);
+          setImageUrl(imgVal);
+        } else {
+          localStorage.removeItem(`car_img_${id}`);
+        }
         alert('แก้ไขสำเร็จ');
         setIsEditing(false);
         fetchCar();
@@ -196,53 +218,86 @@ function CarDetail() {
       <div className="container">
         <h1 className="page-title">รายละเอียดรถ</h1>
 
-        <div className="card">
-          <div className="btn-row">
-            <button onClick={() => navigate(-1)} className="btn btn-secondary">← กลับ</button>
-            {car && (
-              <>
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="btn btn-blue"
-                >
-                  {isEditing ? 'ยกเลิกแก้ไข' : '✏️ แก้ไข'}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="btn btn-danger"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'กำลังลบ...' : '🗑 ลบข้อมูล'}
-                </button>
-              </>
-            )}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="detail-img-wrap">
+            <img
+              src={imageUrl}
+              alt={car ? `${car.brand} ${car.carModel}` : 'car'}
+              className="detail-img"
+              onError={e => { e.target.src = 'https://loremflickr.com/800/400/car,automobile'; }}
+            />
           </div>
 
-          <hr className="divider" />
+          <div style={{ padding: '24px' }}>
+            <div className="btn-row">
+              <button onClick={() => navigate(-1)} className="btn btn-secondary">← กลับ</button>
+              {car && (
+                <>
+                  <button onClick={() => setIsEditing(!isEditing)} className="btn btn-blue">
+                    {isEditing ? 'ยกเลิก' : '✏️ แก้ไข'}
+                  </button>
+                  <button onClick={handleDelete} className="btn btn-danger" disabled={isDeleting}>
+                    {isDeleting ? 'กำลังลบ...' : '🗑 ลบ'}
+                  </button>
+                </>
+              )}
+            </div>
 
-          {detailError ? (
-            <p className="error-text">{detailError}</p>
-          ) : isEditing ? (
-            <form onSubmit={handleEditSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>ยี่ห้อรถ (Brand)</label>
-                  <input name="brand" placeholder="Brand" value={editFormData.brand} onChange={handleChange} required />
+            <hr className="divider" />
+
+            {detailError ? (
+              <p className="error-text">{detailError}</p>
+            ) : isEditing ? (
+              <form onSubmit={handleEditSubmit}>
+                <div className="detail-fields">
+                  <div className="form-group">
+                    <label>ยี่ห้อรถ (Brand)</label>
+                    <input name="brand" value={editFormData.brand} onChange={handleChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>รุ่น (Model)</label>
+                    <input name="carModel" value={editFormData.carModel} onChange={handleChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>ป้ายทะเบียน</label>
+                    <input name="licenseplate" value={editFormData.licenseplate} onChange={handleChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>หมายเหตุ (Remarks)</label>
+                    <input name="remarks" value={editFormData.remarks} onChange={handleChange} />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>🖼 URL รูปภาพ (ถ้าไม่ใส่จะใช้รูปอัตโนมัติ)</label>
+                    <input name="imageUrl" placeholder="https://example.com/car.jpg" value={editFormData.imageUrl} onChange={handleChange} />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>รุ่น (Model)</label>
-                  <input name="model" placeholder="Model" value={editFormData.model} onChange={handleChange} required />
-                </div>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ marginTop: '16px' }}>
                   {isSaving ? 'กำลังบันทึก...' : '💾 บันทึก'}
                 </button>
+              </form>
+            ) : car ? (
+              <div className="detail-fields">
+                <div className="detail-field">
+                  <div className="detail-field-label">ยี่ห้อ</div>
+                  <div className="detail-field-value">{car.brand || '-'}</div>
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">รุ่น</div>
+                  <div className="detail-field-value">{car.carModel || '-'}</div>
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">ป้ายทะเบียน</div>
+                  <div className="detail-field-value">{car.licenseplate || '-'}</div>
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">หมายเหตุ</div>
+                  <div className="detail-field-value">{car.remarks || '-'}</div>
+                </div>
               </div>
-            </form>
-          ) : car ? (
-            <pre className="detail-pre">{JSON.stringify(car, null, 2)}</pre>
-          ) : (
-            <p className="loading-text">กำลังโหลด...</p>
-          )}
+            ) : (
+              <p className="loading-text">กำลังโหลด...</p>
+            )}
+          </div>
         </div>
       </div>
     </>
