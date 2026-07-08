@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import './App.css';
 
+function Navbar() {
+  return (
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">HAUP<span>CAR</span> <span style={{ fontSize: '13px', fontWeight: 400, color: '#888' }}>Admin</span></Link>
+    </nav>
+  );
+}
+
 function CarList() {
   const [cars, setCars] = useState([]);
   const [formData, setFormData] = useState({ brand: '', model: '' });
@@ -49,40 +57,54 @@ function CarList() {
   };
 
   return (
-    <div className="container">
-      <div className="card">
-        <h1>Create Car</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input name="brand" placeholder="Brand" value={formData.brand} onChange={handleChange} required />
-            <input name="model" placeholder="Model" value={formData.model} onChange={handleChange} required />
-          </div>
-          <button type="submit" className="btn-submit" disabled={isSubmitting}>
-            {isSubmitting ? 'กำลังบันทึก...' : 'Submit'}
-          </button>
-        </form>
-      </div>
+    <>
+      <Navbar />
+      <div className="container">
+        <h1 className="page-title">จัดการข้อมูลรถ</h1>
 
-      <div className="card">
-        <h1>Cars List</h1>
-        {listError ? (
-          <p style={{ color: 'red' }}>{listError}</p>
-        ) : (
-          <ul className="car-list">
-            {cars.map((car, index) => {
-              const carId = car.id || car._id || index;
-              return (
-                <li key={carId} className="car-item">
-                  <Link to={`/car/${carId}`}>
-                    {JSON.stringify(car)}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="card">
+          <h2>เพิ่มรถใหม่</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label>ยี่ห้อรถ (Brand)</label>
+                <input name="brand" placeholder="เช่น Toyota" value={formData.brand} onChange={handleChange} required />
+              </div>
+              <div className="form-group">
+                <label>รุ่น (Model)</label>
+                <input name="model" placeholder="เช่น Fortuner" value={formData.model} onChange={handleChange} required />
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'กำลังบันทึก...' : '+ เพิ่มรถ'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="card">
+          <h2>รายการรถทั้งหมด <span className="badge">{cars.length} คัน</span></h2>
+          {listError ? (
+            <p className="error-text">{listError}</p>
+          ) : cars.length === 0 ? (
+            <p className="empty-text">ยังไม่มีข้อมูลรถ</p>
+          ) : (
+            <ul className="car-list">
+              {cars.map((car, index) => {
+                const carId = car.id || car._id || index;
+                return (
+                  <li key={carId} className="car-item">
+                    <Link to={`/car/${carId}`}>
+                      {car.brand || 'N/A'} — {car.model || JSON.stringify(car)}
+                    </Link>
+                    <span className="car-item-arrow">›</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -116,7 +138,7 @@ function CarDetail() {
   }, [id]);
 
   const handleDelete = () => {
-    if (window.confirm('ยืนยันการลบ?')) {
+    if (window.confirm('ยืนยันการลบรถคันนี้?')) {
       setIsDeleting(true);
       fetch(`http://localhost:3000/cars/${id}`, { method: 'DELETE' })
         .then(response => {
@@ -158,52 +180,61 @@ function CarDetail() {
   };
 
   return (
-    <div className="container">
-      <div className="card">
-        <button onClick={() => navigate(-1)} className="btn-submit" style={{ marginBottom: '20px', marginRight: '10px' }}>
-          Back
-        </button>
-        {car && (
-          <>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="btn-submit"
-              style={{ marginBottom: '20px', marginRight: '10px', backgroundColor: '#2196F3' }}
-            >
-              {isEditing ? 'Cancel Edit' : 'Edit'}
-            </button>
-            <button
-              onClick={handleDelete}
-              className="btn-submit"
-              style={{ marginBottom: '20px', backgroundColor: '#f44336' }}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'กำลังลบ...' : 'Delete'}
-            </button>
-          </>
-        )}
-        <h1>Car Detail</h1>
-        {detailError ? (
-          <p style={{ color: 'red' }}>{detailError}</p>
-        ) : isEditing ? (
-          <form onSubmit={handleEditSubmit}>
-            <div className="form-group">
-              <input name="brand" placeholder="Brand" value={editFormData.brand} onChange={handleChange} required />
-              <input name="model" placeholder="Model" value={editFormData.model} onChange={handleChange} required />
-            </div>
-            <button type="submit" className="btn-submit" disabled={isSaving}>
-              {isSaving ? 'กำลังบันทึก...' : 'Save'}
-            </button>
-          </form>
-        ) : (
-          car ? (
-            <pre>{JSON.stringify(car, null, 2)}</pre>
+    <>
+      <Navbar />
+      <div className="container">
+        <h1 className="page-title">รายละเอียดรถ</h1>
+
+        <div className="card">
+          <div className="btn-row">
+            <button onClick={() => navigate(-1)} className="btn btn-secondary">← กลับ</button>
+            {car && (
+              <>
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="btn btn-blue"
+                >
+                  {isEditing ? 'ยกเลิกแก้ไข' : '✏️ แก้ไข'}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="btn btn-danger"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'กำลังลบ...' : '🗑 ลบข้อมูล'}
+                </button>
+              </>
+            )}
+          </div>
+
+          <hr className="divider" />
+
+          {detailError ? (
+            <p className="error-text">{detailError}</p>
+          ) : isEditing ? (
+            <form onSubmit={handleEditSubmit}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>ยี่ห้อรถ (Brand)</label>
+                  <input name="brand" placeholder="Brand" value={editFormData.brand} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                  <label>รุ่น (Model)</label>
+                  <input name="model" placeholder="Model" value={editFormData.model} onChange={handleChange} required />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                  {isSaving ? 'กำลังบันทึก...' : '💾 บันทึก'}
+                </button>
+              </div>
+            </form>
+          ) : car ? (
+            <pre className="detail-pre">{JSON.stringify(car, null, 2)}</pre>
           ) : (
-            <p>Loading...</p>
-          )
-        )}
+            <p className="loading-text">กำลังโหลด...</p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
