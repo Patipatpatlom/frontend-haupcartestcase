@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './App.css';
 
 function App() {
   const [cars, setCars] = useState([]);
@@ -44,22 +45,28 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>Create Car</h1>
-      <form onSubmit={handleSubmit}>
-        <input name="brand" placeholder="Brand" value={formData.brand} onChange={handleChange} />
-        <input name="model" placeholder="Model" value={formData.model} onChange={handleChange} />
-        <button type="submit">Submit</button>
-      </form>
+    <div className="container">
+      <div className="card">
+        <h1>Create Car</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input name="brand" placeholder="Brand" value={formData.brand} onChange={handleChange} />
+            <input name="model" placeholder="Model" value={formData.model} onChange={handleChange} />
+          </div>
+          <button type="submit" className="btn-submit">Submit</button>
+        </form>
+      </div>
 
-      <h1>Cars List</h1>
-      <ul>
-        {cars.map((car, index) => (
-          <li key={index}>
-            {JSON.stringify(car)}
-          </li>
-        ))}
-      </ul>
+      <div className="card">
+        <h1>Cars List</h1>
+        <ul className="car-list">
+          {cars.map((car, index) => (
+            <li key={index} className="car-item">
+              {JSON.stringify(car)}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
