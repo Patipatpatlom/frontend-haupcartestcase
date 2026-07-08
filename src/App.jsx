@@ -88,19 +88,30 @@ function CarList() {
           ) : cars.length === 0 ? (
             <p className="empty-text">ยังไม่มีข้อมูลรถ</p>
           ) : (
-            <ul className="car-list">
+            <div className="car-grid">
               {cars.map((car, index) => {
                 const carId = car.id || car._id || index;
+                const imgQuery = encodeURIComponent(`${car.brand || 'car'} ${car.carModel || car.model || ''}`);
                 return (
-                  <li key={carId} className="car-item">
-                    <Link to={`/car/${carId}`}>
-                      {car.brand || 'N/A'} — {car.model || JSON.stringify(car)}
-                    </Link>
-                    <span className="car-item-arrow">›</span>
-                  </li>
+                  <Link to={`/car/${carId}`} key={carId} className="car-card">
+                    <div className="car-card-img-wrap">
+                      <img
+                        src={`https://loremflickr.com/400/220/${imgQuery},car,automobile?lock=${carId}`}
+                        alt={`${car.brand} ${car.carModel}`}
+                        className="car-card-img"
+                        onError={e => { e.target.src = 'https://loremflickr.com/400/220/car,automobile'; }}
+                      />
+                    </div>
+                    <div className="car-card-body">
+                      <div className="car-card-brand">{car.brand || 'N/A'}</div>
+                      <div className="car-card-model">{car.carModel || car.model || '-'}</div>
+                      <div className="car-card-plate">🚗 {car.licenseplate || car.licensePlate || '-'}</div>
+                      {car.remarks && <div className="car-card-remarks">{car.remarks}</div>}
+                    </div>
+                  </Link>
                 );
               })}
-            </ul>
+            </div>
           )}
         </div>
       </div>
